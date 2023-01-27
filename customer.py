@@ -1,10 +1,4 @@
-
-# Run this program on your local python
-# interpreter, provided you have installed
-# the required libraries.
-
 # Importing the required packages
-import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix
@@ -13,11 +7,13 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 from sklearn import tree
+import graphviz
 
 
 # Function importing Dataset
 def importdata():
     customer = pd.read_excel('table1.xlsx')
+    print('Dataset Type:', type(customer))
 
 # update Age ("<=30":1,"[31,40]":2, ">40":3)
     customer.replace("<=30", 1, inplace=True)
@@ -56,11 +52,26 @@ def splitdataset(balance_data):
     Y = balance_data.values[:, 5:]
 
     # Splitting the dataset into train and test
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
+    # stratified Train-Test split
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=1, stratify= Y)
 
     print("Training set:", X_train)
     print("Test set:", X_test)
     return X, Y, X_train, X_test, y_train, y_test
+
+
+def check_depth(X_train, Y_train, X_test, Y_test ):
+    # List of values to try for max_depth:
+    max_depth_range = list(range(1, 5))
+    # List to store the accuracy for each value of max_depth:
+    accuracy = []
+    for depth in max_depth_range:
+        clf = DecisionTreeClassifier(max_depth=depth,
+                                     random_state=0)
+        clf.fit(X_train, Y_train)
+        score = clf.score(X_test, Y_test)
+        accuracy.append(score)
+    return accuracy, max_depth_range
 
 
 # Function to perform training with giniIndex.
@@ -82,7 +93,7 @@ def plot_tree(clf_gini,data):
 
 
 # Function to perform training with entropy.
-def tarin_using_entropy(X_train, y_train):
+def train_using_entropy(X_train, y_train):
     # Decision tree with entropy
     clf_entropy = DecisionTreeClassifier(
         criterion="entropy", random_state=100,
@@ -97,30 +108,33 @@ def tarin_using_entropy(X_train, y_train):
 def prediction(X_test, clf_object):
     # Predicton on test with giniIndex
     y_pred = clf_object.predict(X_test)
-    print("Predicted values:")
-    print(y_pred)
+    print("Predicted values:", y_pred)
     return y_pred
 
 
 # Function to calculate accuracy
 def cal_accuracy(y_test, y_pred):
-    print("Confusion Matrix: ",
-          confusion_matrix(y_test, y_pred))
+    print("Confusion Matrix: ", confusion_matrix(y_test, y_pred))
 
-    print("Accuracy : ",
-          accuracy_score(y_test, y_pred) * 100)
+    print("Accuracy : ", accuracy_score(y_test, y_pred) * 100)
 
-    print("Report : ",
-          classification_report(y_test, y_pred))
+    print("Report : ", classification_report(y_test, y_pred))
 
 
-# Driver code
-def main():
+# main code
+def main(X, Y, X_train, X_test, y_train, y_test):
     # Building Phase
-    data = importdata()
-    X, Y, X_train, X_test, y_train, y_test = splitdataset(data)
+
+    # test the depth of the decision tree
+    accuracy, max_depth_range = check_depth(X_train, y_train, X_test, y_test)
+    plt.plot(max_depth_range, accuracy)
+    plt.title('Access the Depth of Decision Tree')
+    plt.xlabel('Depth')
+    plt.ylabel('Accuracy')
+    plt.savefig('Depth_Test')
+
     clf_gini = train_using_gini(X_train, y_train)
-    clf_entropy = tarin_using_entropy(X_train, y_train)
+    clf_entropy = train_using_entropy(X_train, y_train)
 
     # Operational Phase
     print("Results Using Gini Index:")
@@ -135,26 +149,41 @@ def main():
     cal_accuracy(y_test, y_pred_entropy)
 
 
-def predict_new_client(new_client_data):
-    data = importdata()
-    X, Y, X_train, X_test, y_train, y_test = splitdataset(data)
+def predict_new_client(new_client_data, X, Y):
+
     clf_gini = train_using_gini(X, Y)
-    clf_entropy = tarin_using_entropy(X, Y)
+    clf_entropy = train_using_entropy(X, Y)
     print("New Client:",new_client_data)
 
     print("Results Using Gini Index:")
     # Prediction using gini
     y_pred_gini = prediction(new_client_data, clf_gini)
-    plot_tree(clf_gini,data)
+    # plot_tree(clf_gini,data)
+
+    # plot the Decision Train trained using the Gini Index
+    dot_data = tree.export_graphviz(clf_gini, feature_names=data.columns[1:5],
+                                    class_names=['Not Buying', 'Buying'], filled=True)
+    graph = graphviz.Source(dot_data)
+    graph.render('decision_tree')
 
     return y_pred_gini
 
 
 # Calling main function
 if __name__ == "__main__":
-    main()
+    # import data from a xlsx table
+    data = importdata()
+
+    # Stratified Train-Test dataset
+    X, Y, X_train, X_test, y_train, y_test = splitdataset(data)
+
+    # Proceed to train and test a decision tree; return accuracy test reports
+    main(X, Y, X_train, X_test, y_train, y_test)
 
     # new client:年龄(50), 收入(Medium),非学生，信用记录 (excellent)
     new_client = [[3,2,0,2]]
     new_client = pd.DataFrame(new_client,columns=[ 'Age', 'Incoming','Student', 'Credit Rating'])
-    predict_new_client(new_client)
+
+    # Predict the result for new data
+    predict_new_client(new_client, X, Y)
+
