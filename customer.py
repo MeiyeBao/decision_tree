@@ -48,16 +48,17 @@ def importdata():
 # Function to split the dataset
 def splitdataset(balance_data):
     # Separating the target variable
-    X = balance_data.values[:, 1:5]
-    Y = balance_data.values[:, 5:]
+    X1 = balance_data.values[:, 1:5]
+    Y1 = balance_data.values[:, 5:]
 
     # Splitting the dataset into train and test
     # stratified Train-Test split
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=1, stratify= Y)
+    X_train1, X_test1, y_train1, y_test1 = train_test_split(
+        X1, Y1, test_size=0.2, random_state=1, stratify=Y1)
 
-    print("Training set:", X_train)
-    print("Test set:", X_test)
-    return X, Y, X_train, X_test, y_train, y_test
+    print("Training set:", X_train1)
+    print("Test set:", X_test1)
+    return X1, Y1, X_train1, X_test1, y_train1, y_test1
 
 
 def check_depth(X_train, Y_train, X_test, Y_test ):
