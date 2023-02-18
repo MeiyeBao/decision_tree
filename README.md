@@ -4,6 +4,9 @@
 ## Project Description: Customer Segmentation
 The target of this project is to classify customers' purchasing behaviour based on customers' basic information.
 
+## Dataset 
+table1.xlsx is the dataset used with 13 customers' information.
+At the end, a new customer is added to show the function of the trained decision tree.
 
 ## Data Cleaning 
 
